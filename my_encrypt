@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#	$1 N - tworzymy nowy klucz
+#		$2 Sciezka do pliku ktory kodujemy
+#		$3 Sciezka do Keystore
+#		$4 Identyfikator klucza
+#	$1 S - wykorzystujemy istniejacy klucz
+#		$2 Sciezka do pliku ktory kodujemy
+#		$3 Sciezka do Keystore
+#		$4 Identyfikator klucza
+#	$1 W - podajemy wlasny klucz
+#		$2 Sciezka do pliku ktory kodujemy
+#		$3 Klucz
+
+if [ ! -f $2 ]; then
+	echo "Plik $1 nie istnieje."
+	exit 1
+fi
+
+if [ $1 == 'N' ];then
+	if (( $# != 4 )); then
+        	echo "Bledna liczba argumentow"
+        	exit 1
+	fi
+	if [ -f $3/$4.nc ];then
+		echo "Jest juz klucz z takim identyfikatorem"
+		exit 1
+	fi
+	if [ ! -d $3 ];then
+        	mkdir $3
+	fi
+	openssl rand -base64 128 -out $3/$4
+	openssl enc -aes-256-cbc -in $2 -out $2.enc -pass file:./$3/$4
+	mcrypt -u $3/$4
+elif [ $1 == 'S' ];then
+	if (( $# != 4 )); then
+        	echo "Bledna liczba argumentow"
+        	exit 1
+	fi
+        if [ ! -f $3/$4.nc ];then
+                echo "Nie ma klucza z takim identyfikatorem"
+                exit 1
+        fi
+	if [ ! -d $3 ];then
+        	mkdir $3
+	fi
+	mcrypt -d $3/$4.nc
+	openssl enc -aes-256-cbc -in $2 -out $2.enc -pass file:./$3/$4
+	rm $3/$4
+elif [ $1 == 'W' ];then
+	if (( $# != 3 )); then
+       		echo "Bledna liczba argumentow"
+        	exit 1
+	fi
+	openssl enc -aes-256-cbc -in $2 -out $2.enc -pass pass:$3
+else
+	echo "Zly czwart parametr $4. Powinien byc: S-uzyj istniejacego klucza; N-uzyj nowego klucza"
+	exit 1
+fi
+rm $2

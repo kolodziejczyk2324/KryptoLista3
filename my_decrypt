@@ -1,0 +1,64 @@
+#!/bin/bash
+
+#       $1 N jesli nie podajemy nic dodatkowego
+#               $2      Sciezka do pliku ktory dekodujemy
+#               $3      Nazwa zdekodowanego pliku
+#               $4      Sciezka do Keystore
+#               $5      Identyfikator klucza
+#       $1 H jesli podajemy haslo
+#               $2      Sciezka do pliku ktory dekodujemy
+#               $3      Nazwa zdekodowanego pliku
+#               $4      Sciezka do Keystore
+#               $5      Identyfikator klucza
+#               $6      Haslo do klucza z Keystore
+#       $1 K jesli podajemy klucz
+#               $2      Sciezka do pliku ktory dekodujemy
+#               $3      Nazwa zdekodowanego pliku
+#               $4      Klucz do zdekodowanego pliku
+
+if [ ! -f $2 ]; then
+        echo "Plik $2 nie istnieje."
+        exit 1
+fi
+if [ $1  == 'N' ]; then #nie podalismy nic dodatkowego
+        if (( $# != 5 )); then
+                echo "Bledna liczba argumentow"
+                exit 1
+        fi
+	if [ ! -d $4 ]; then
+        	echo "Folder $4 nie istnieje."
+        	exit 1
+	fi
+	if [ ! -f $4/$5.nc ]; then
+        	echo "Nie ma takiego identyfikatora"
+        	exit 1
+	fi
+	mcrypt -d $4/$5.nc
+	openssl enc -d -aes-256-cbc -in $2 -out $3 -pass file:./$4/${5%$".nc"}
+	rm $4/${5%$".nc"}
+elif [ $1 == 'H' ]; then #podajemy od razu haslo
+        if (( $# != 6 )); then
+                echo "Bledna liczba argumentow"
+                exit 1
+        fi
+	if [ ! -d $4 ]; then
+        	echo "Folder $4 nie istnieje."
+        	exit 1
+	fi
+	if [ ! -f $4/$5.nc ]; then
+        	echo "Nie ma takiego identyfikatora"
+        	exit 1
+	fi
+	mcrypt -k $6 -d $4/$5.nc
+	openssl enc -d -aes-256-cbc -in $2 -out $3 -pass file:./$4/${5%$".nc"}
+	rm $4/${5%$".nc"}
+elif [ $1 == 'K' ]; then #podajemy od razu klucz
+        if (( $# != 4 )); then
+                echo "Bledna liczba argumentow"
+                exit 1
+        fi
+	openssl enc -d -aes-256-cbc -in $2 -out $3 -pass pass:$4
+else
+	echo "Zly pierwszy argument $1\n"
+	exit 1
+fi
